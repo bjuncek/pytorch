@@ -1871,3 +1871,43 @@ TEST_F(FunctionalTest, MarginRankingLoss) {
     ));
   }
 }
+
+template<c10::ScalarType S, typename T>
+void test_isfinite() {
+  const std::vector<T> values = {
+    std::numeric_limits<T>::lowest(),
+    0, 1, 42,
+    std::numeric_limits<T>::min(),
+    std::numeric_limits<T>::max()
+  };
+  for (const auto value : values) {
+    const auto x = torch::full({3, 3}, value, torch::TensorOptions().dtype(S));
+    ASSERT_TRUE(torch::isfinite(x).all().template item<bool>());
+  }
+  if (std::numeric_limits<T>::has_infinity) {
+    const auto inf = std::numeric_limits<T>::infinity();
+    const auto x = torch::tensor({
+      -inf,
+      std::numeric_limits<T>::lowest(),
+      static_cast<T>(0),
+      static_cast<T>(1),
+      static_cast<T>(42),
+      std::numeric_limits<T>::min(),
+      std::numeric_limits<T>::max(),
+      inf
+    }, torch::TensorOptions().dtype(S));
+    ASSERT_TRUE(torch::allclose(
+      torch::isfinite(x).toType(torch::kInt),
+      torch::tensor(
+        {false, true, true, true, true, true, true, false}
+      ).toType(torch::kInt)
+    ));
+  }
+}
+
+TEST_F(FunctionalTest, isfinite) {
+  test_isfinite<torch::kFloat, float>();
+  test_isfinite<torch::kDouble, double>();
+  test_isfinite<torch::kInt, int>();
+  test_isfinite<torch::kLong, long>();
+}

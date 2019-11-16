@@ -72,6 +72,8 @@ if PY33:
         'rpc_spawn',
         'dist_autograd_fork',
         'dist_autograd_spawn',
+        'dist_optimizer_fork',
+        'dist_optimizer_spawn',
     ])
 
 # skip < 3.6 b/c fstrings added in 3.6
@@ -86,6 +88,8 @@ WINDOWS_BLACKLIST = [
     'rpc_spawn',
     'dist_autograd_fork',
     'dist_autograd_spawn',
+    'dist_optimizer_fork',
+    'dist_optimizer_spawn',
 ]
 
 ROCM_BLACKLIST = [
@@ -96,6 +100,8 @@ ROCM_BLACKLIST = [
     'rpc_spawn',
     'dist_autograd_fork',
     'dist_autograd_spawn',
+    'dist_optimizer_fork',
+    'dist_optimizer_spawn',
 ]
 
 DISTRIBUTED_TESTS_CONFIG = {}

@@ -559,6 +559,9 @@ try:
 except ImportError:
     print('Fail to import hypothesis in common_utils, tests are not derandomized')
 
+disabled_test_from_issues = None
+disabled_query = 'is%3Aissue+is%3Aopen+label%3A%22topic%3A+flaky-tests%22+repo:pytorch/pytorch+in%3Atitle+DISABLED'
+
 class TestCase(expecttest.TestCase):
     precision = 1e-5
     maxDiff = None
@@ -614,9 +617,32 @@ class TestCase(expecttest.TestCase):
         return self.wrap_method_with_cuda_policy(method, self.assertLeaksNoCudaTensors)
 
     def setUp(self):
+        global disabled_test_from_issues
+        if disabled_test_from_issues is None:
+            disabled_test_from_issues = set()
+            if not IS_SANDCASTLE:
+                try:
+                    import urllib.request
+                    import json
+                    url = 'https://api.github.com/search/issues?q={}'.format(disabled_query)
+                    contents = urllib.request.urlopen(url, timeout=1).read()
+                    the_response = json.loads(contents)
+                    for item in the_response['items']:
+                        title = item['title']
+                        key = 'DISABLED '
+                        if title.startswith(key):
+                            test_name = title[len(key):].strip()
+                            disabled_test_from_issues.add(test_name)
+
+                except Exception:
+                    print("Couldn't download test skip set, leaving all tests enabled...")
+
         if TEST_SKIP_FAST:
             if not getattr(self, self._testMethodName).__dict__.get('slow_test', False):
                 raise unittest.SkipTest("test is fast; we disabled it with PYTORCH_TEST_SKIP_FAST")
+        if str(self) in disabled_test_from_issues:
+            raise unittest.SkipTest(
+                "Test is disabled because an issue exists disabling it: https://github.com/search?q={}".format(disabled_query))
 
         set_rng_seed(SEED)
 
